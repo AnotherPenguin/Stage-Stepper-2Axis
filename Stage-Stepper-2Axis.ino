@@ -10,7 +10,6 @@
 
     To-do: implement acceleration
       accept commands over serial, including custom intervals (command X centimeters, translate into Y steps)
-      Improve the telemetry. does not need to send every half-second, only needs to send when changes occur.
 */
 int ledPin = 13; //Green of bi-color LED, also onboard LED
 int ledLimitPin = 12; //not implemented yet. Red of bi-color LED
@@ -52,8 +51,6 @@ long YPosition = 0L;
 int Xincrements = 0; //tracking how many times we've incremented. good for counting distance (e.g. centimeters)
 int Yincrements = 0;
 
-long timer = 0L; //used for controlling periodicity of the telemetry
-
 void setup() {  
   pinMode(XDirPin, OUTPUT);
   pinMode(XStepPin, OUTPUT);
@@ -75,15 +72,10 @@ void setup() {
   
   Serial.begin(38400); //I prefer to use a relatively fast speed so the arduino spends less time talking, more time doing real work.
   Serial.println("Initialized");
+  telemetry();
 }
 
 void loop(){
- if (millis() >= timer){ //periodically report the X/Y position. doubles as a heartbeat
-   timer = millis() + 500;
-   Serial.println("position");
-   Serial.print("X"); Serial.print(XPosition); Serial.print(" steps; "); Serial.println(Xincrements);
-   Serial.print("Y"); Serial.print(YPosition); Serial.print(" steps; "); Serial.println(Yincrements);
- }
  //read and invert the input pins. We invert it because buttom pressed = LOW = FALSE (because INPUT_PULLUP), but I want operator input = TRUE
  //the way I'm using this information, it isn't crucial that I actually store this as variables...
  UpJog = !(digitalRead(UpJogPin));
@@ -103,7 +95,7 @@ void loop(){
  if (UpJog){
    digitalWrite(YDirPin, HIGH); //let's say Up = positve = HIGH, Down = negative = LOW.
    delayMicroseconds(3); //wait for the stepper driver to set the direction. made obsolete by the Serial.print() which follows...
-   Serial.println("jogging up | Y+");
+   Serial.println("Y+ jogging up");
    while ((digitalRead(UpJogPin) == LOW) && digitalRead(UpLimitPin)){ //Remember, inputs are inverse logic
      digitalWrite(ledPin, HIGH); //pulsing the LED
      digitalWrite(YStepPin, HIGH); //sending step signal
@@ -113,11 +105,12 @@ void loop(){
      YPosition++; //increment our position value
      delayMicroseconds(YpulseWidthMicros); // this will give us something below a 50% duty cycle, exact rate relies on While loop cycle times
    }
+   telemetry();
  }
  if (UpInc && digitalRead(UpLimitPin)){ 
    digitalWrite(YDirPin, HIGH);
    delayMicroseconds(3);
-   Serial.println("Increment Up | Y+");
+   Serial.println("Y+ increment up");
    for (int count = 0; count < YIncrement; count++){ //we want to complete the whole increment as smoothly as possible, so we ignore the rest of the program
      digitalWrite(ledPin, HIGH);
      digitalWrite(YStepPin, HIGH);
@@ -129,13 +122,14 @@ void loop(){
      if (!(digitalRead(UpLimitPin))) count = YIncrement; //if we hit a limit switch, force the For loop to finish
   }
   Yincrements++;
+  telemetry();
   delay(250);
  }
  
  if (DownJog){
    digitalWrite(YDirPin, LOW);
    delayMicroseconds(3);
-   Serial.println("jogging down | Y-");
+   Serial.println("Y- jogging down");
    while (!(digitalRead(DownJogPin)) && digitalRead(DownLimitPin)){
      digitalWrite(ledPin, HIGH);
      digitalWrite(YStepPin, HIGH);
@@ -145,11 +139,12 @@ void loop(){
      YPosition--;
      delayMicroseconds(YpulseWidthMicros);
    }
+   telemetry();
  }
  if (DownInc && digitalRead(DownLimitPin)){ 
    digitalWrite(YDirPin, LOW);
    delayMicroseconds(3);
-   Serial.println("Increment Down | Y-");
+   Serial.println("Y- increment down");
    for (int count = 0; count < YIncrement; count++){
      digitalWrite(ledPin, HIGH);
      digitalWrite(YStepPin, HIGH);
@@ -161,13 +156,14 @@ void loop(){
      if (!(digitalRead(DownLimitPin))) count = YIncrement;
   }
   Yincrements--;
+  telemetry();
   delay(250);
  }
  
  if (LeftJog){
    digitalWrite(XDirPin, HIGH);
    delayMicroseconds(3);
-   Serial.println("jogging left | X+");
+   Serial.println("X+ jogging left");
    while (!(digitalRead(LeftJogPin)) && digitalRead(LeftLimitPin)){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
@@ -177,11 +173,12 @@ void loop(){
      XPosition++;
      delayMicroseconds(XpulseWidthMicros);
    }
+   telemetry();
  }
  if (LeftInc && digitalRead(DownLimitPin)){ 
    digitalWrite(XDirPin, HIGH);
    delayMicroseconds(3);
-   Serial.println("Increment Left | X+");
+   Serial.println("X+ increment left");
    for (int count = 0; count < XIncrement; count++){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
@@ -193,13 +190,14 @@ void loop(){
      if (!(digitalRead(LeftLimitPin))) count = XIncrement;
   }
   Xincrements++;
+  telemetry();
   delay(250);
  }
  
  if (RightJog){
    digitalWrite(XDirPin, LOW);
    delayMicroseconds(3);
-   Serial.println("jogging right | X-");
+   Serial.println("X- jogging right");
    while (!(digitalRead(RightJogPin)) && digitalRead(RightLimitPin)){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
@@ -209,11 +207,12 @@ void loop(){
      XPosition--;
      delayMicroseconds(XpulseWidthMicros);
    }
+   telemetry();
  }
  if (RightInc && digitalRead(RightLimitPin)){ 
    digitalWrite(XDirPin, LOW);
    delayMicroseconds(3);
-   Serial.println("Increment right | X-");
+   Serial.println("X- increment right");
    for (int count = 0; count < XIncrement; count++){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
@@ -225,7 +224,14 @@ void loop(){
      if (!(digitalRead(RightLimitPin))) count = XIncrement;
   }
   Xincrements--;
+  telemetry();
   delay(250);
  }
 }
+
+void telemetry(){
+   Serial.println("position");
+   Serial.print("X "); Serial.print(XPosition); Serial.print(" steps; "); Serial.print(Xincrements); Serial.println(" cm");
+   Serial.print("Y "); Serial.print(YPosition); Serial.print(" steps; "); Serial.print(Yincrements); Serial.println(" cm");
+ }
 
