@@ -21,12 +21,12 @@ int YStepPin = 8;
 //input pins. regular digital inputs will work; these are just buttons
 int UpJogPin = 24; //for running one step at a time. hold "jog" to translate continuously
 int DownJogPin = 22;
-int LeftJogPin = 28;
-int RightJogPin = 26;
+int LeftJogPin = 26;
+int RightJogPin = 28;
 int UpIncPin = 25; //for running in our pre-determined fixed increments e.g. 1 centimeter
 int DownIncPin = 23;
-int LeftIncPin = 29;
-int RightIncPin = 27;
+int LeftIncPin = 27;
+int RightIncPin = 29;
 int UpLimitPin = 30; //limit switches.
 int DownLimitPin = 31;
 int LeftLimitPin = 32;
@@ -161,69 +161,69 @@ void loop(){
  }
  
  if (LeftJog){
-   digitalWrite(XDirPin, HIGH);
+   digitalWrite(XDirPin, LOW);
    delayMicroseconds(3);
-   Serial.println("X+ jogging left");
+   Serial.println("X- jogging left");
    while (!(digitalRead(LeftJogPin)) && digitalRead(LeftLimitPin)){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
      delayMicroseconds(XpulseWidthMicros);
      digitalWrite(XStepPin, LOW);
      digitalWrite(ledPin, LOW);
-     XPosition++;
+     XPosition--;
      delayMicroseconds(XpulseWidthMicros);
    }
    telemetry();
  }
  if (LeftInc && digitalRead(DownLimitPin)){ 
-   digitalWrite(XDirPin, HIGH);
+   digitalWrite(XDirPin, LOW);
    delayMicroseconds(3);
-   Serial.println("X+ increment left");
+   Serial.println("X- increment left");
    for (int count = 0; count < XIncrement; count++){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
      delayMicroseconds(XpulseWidthMicros);
      digitalWrite(XStepPin, LOW);
      digitalWrite(ledPin, LOW);
-     XPosition++;
+     XPosition--;
      delayMicroseconds(XpulseWidthMicros);
      if (!(digitalRead(LeftLimitPin))) count = XIncrement;
   }
-  Xincrements++;
+  Xincrements--;
   telemetry();
   delay(250);
  }
  
  if (RightJog){
-   digitalWrite(XDirPin, LOW);
+   digitalWrite(XDirPin, HIGH);
    delayMicroseconds(3);
-   Serial.println("X- jogging right");
+   Serial.println("X+ jogging right");
    while (!(digitalRead(RightJogPin)) && digitalRead(RightLimitPin)){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
      delayMicroseconds(XpulseWidthMicros);
      digitalWrite(XStepPin, LOW);
      digitalWrite(ledPin, LOW);
-     XPosition--;
+     XPosition++;
      delayMicroseconds(XpulseWidthMicros);
    }
    telemetry();
  }
  if (RightInc && digitalRead(RightLimitPin)){ 
-   digitalWrite(XDirPin, LOW);
+   digitalWrite(XDirPin, HIGH);
    delayMicroseconds(3);
-   Serial.println("X- increment right");
+   Serial.println("X+ increment right");
    for (int count = 0; count < XIncrement; count++){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
      delayMicroseconds(XpulseWidthMicros);
      digitalWrite(XStepPin, LOW);
      digitalWrite(ledPin, LOW);
-     XPosition--;
+     XPosition++;
      delayMicroseconds(XpulseWidthMicros);
      if (!(digitalRead(RightLimitPin))) count = XIncrement;
   }
-  Xincrements--;
+  Xincrements++;
   telemetry();
   delay(250);
  }
