@@ -32,8 +32,10 @@ int DownLimitPin = 31;
 int LeftLimitPin = 32;
 int RightLimitPin = 33;
 //motor drive characteristics
-int XIncrement = 4000; //steps per fixed distance interval. My X axis is 4000 steps per cm (10160 steps per inch)
-int YIncrement = 2360; //the Y axis is ~2360 steps per centimeter
+int XIncrement = 13740; //steps per fixed distance interval. My X axis is 4000 steps per cm (10160 steps per inch)
+int XIncrementBig = 14140; //every-other cell gap is larger because wires.
+int XIncrementSmall = 13740; //store this here so Big can overwrite XIncrement, and then the value can be restored.
+int YIncrement = 15942; //the Y axis is ~2360 steps per centimeter
 int XpulseWidthMicros = 75;// how long we pulse the STEP signal. Arduino suggests values above 3 microseconds for consistency/granularity of the Arduino clock.
 int YpulseWidthMicros = 125;
 // pins -> variables
@@ -77,7 +79,7 @@ void setup() {
 
 void loop(){
  //read and invert the input pins. We invert it because buttom pressed = LOW = FALSE (because INPUT_PULLUP), but I want operator input = TRUE
- //the way I'm using this information, it isn't crucial that I actually store this as variables...
+ //the way I'm using this information, it isn't crucial that I actually store this as variables... pins could be read directly at each function.
  UpJog = !(digitalRead(UpJogPin));
  DownJog = !(digitalRead(DownJogPin));
  LeftJog = !(digitalRead(LeftJogPin));
@@ -159,7 +161,6 @@ void loop(){
   telemetry();
   delay(250);
  }
- 
  if (LeftJog){
    digitalWrite(XDirPin, LOW);
    delayMicroseconds(3);
@@ -179,6 +180,12 @@ void loop(){
    digitalWrite(XDirPin, LOW);
    delayMicroseconds(3);
    Serial.println("X- increment left");
+   if (Xincrements % 2){ //if moving left, we use a large gap when leaving an odd-numbered increment space
+     XIncrement = XIncrementBig;
+   }
+   else {
+     XIncrement = XIncrementSmall;
+   }
    for (int count = 0; count < XIncrement; count++){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
@@ -213,6 +220,12 @@ void loop(){
    digitalWrite(XDirPin, HIGH);
    delayMicroseconds(3);
    Serial.println("X+ increment right");
+   if (Xincrements % 2){ //if moving right, we use a small gap when leaving an odd-numbered increment space
+     XIncrement = XIncrementSmall;
+   }
+   else {
+     XIncrement = XIncrementBig;
+   }
    for (int count = 0; count < XIncrement; count++){
      digitalWrite(ledPin, HIGH);
      digitalWrite(XStepPin, HIGH);
@@ -231,7 +244,7 @@ void loop(){
 
 void telemetry(){
    Serial.println("position");
-   Serial.print("X "); Serial.print(XPosition); Serial.print(" steps; "); Serial.print(Xincrements); Serial.println(" cm");
-   Serial.print("Y "); Serial.print(YPosition); Serial.print(" steps; "); Serial.print(Yincrements); Serial.println(" cm");
+   Serial.print("X "); Serial.print(XPosition); Serial.print(" steps; "); Serial.print(Xincrements); Serial.println(" increments");
+   Serial.print("Y "); Serial.print(YPosition); Serial.print(" steps; "); Serial.print(Yincrements); Serial.println(" increments");
  }
 
