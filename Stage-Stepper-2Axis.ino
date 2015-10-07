@@ -38,6 +38,8 @@ int XIncrementSmall = 13740; //store this here so Big can overwrite XIncrement, 
 int YIncrement = 15942; //the Y axis is ~2360 steps per centimeter
 int XpulseWidthMicros = 75;// how long we pulse the STEP signal. Arduino suggests values above 3 microseconds for consistency/granularity of the Arduino clock.
 int YpulseWidthMicros = 125;
+// jog mode acceleration
+int JogRate = 512;
 // pins -> variables
 boolean UpJog;
 boolean DownJog;
@@ -106,7 +108,10 @@ void loop(){
      digitalWrite(ledPin, LOW);
      YPosition++; //increment our position value
      delayMicroseconds(YpulseWidthMicros); // this will give us something below a 50% duty cycle, exact rate relies on While loop cycle times
+     delay(JogRate);
+     JogRate = JogRate / 2;
    }
+   JogRate = 512;
    telemetry();
  }
  if (UpInc && digitalRead(UpLimitPin)){ 
@@ -140,7 +145,10 @@ void loop(){
      digitalWrite(ledPin, LOW);
      YPosition--;
      delayMicroseconds(YpulseWidthMicros);
+     delay(JogRate);
+     JogRate = JogRate / 2;
    }
+   JogRate = 512;
    telemetry();
  }
  if (DownInc && digitalRead(DownLimitPin)){ 
@@ -173,7 +181,10 @@ void loop(){
      digitalWrite(ledPin, LOW);
      XPosition--;
      delayMicroseconds(XpulseWidthMicros);
+     delay(JogRate);
+     JogRate = JogRate / 2;
    }
+   JogRate = 512;
    telemetry();
  }
  if (LeftInc && digitalRead(DownLimitPin)){ 
@@ -213,7 +224,10 @@ void loop(){
      digitalWrite(ledPin, LOW);
      XPosition++;
      delayMicroseconds(XpulseWidthMicros);
+     delay(JogRate);
+     JogRate = JogRate / 2;
    }
+   JogRate = 512;
    telemetry();
  }
  if (RightInc && digitalRead(RightLimitPin)){ 
